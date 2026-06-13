@@ -19,16 +19,17 @@ pipeline {
             }
         }
 
-        stage('Verify Image') {
-            steps {
-                sh '''
-                    docker run -d --name test_${BUILD_NUMBER} -p 3001:3000 ${IMAGE_NAME}:${IMAGE_TAG}
-                    sleep 5
-                    curl -f http://localhost:3001/health
-                    docker rm -f test_${BUILD_NUMBER}
-                '''
-            }
-        }
+       stage('Verify Image') {
+    steps {
+        sh '''
+            docker rm -f test_${BUILD_NUMBER} || true
+            docker run -d --name test_${BUILD_NUMBER} -p 3001:3000 ${IMAGE_NAME}:${IMAGE_TAG}
+            sleep 5
+            curl -f http://localhost:3001/health
+            docker rm -f test_${BUILD_NUMBER}
+        '''
+    }
+}
     }
 
     post {
