@@ -19,10 +19,10 @@ pipeline {
             }
         }
 
-       stage('Verify Image') {
+      stage('Verify Image') {
     steps {
         sh '''
-            docker rm -f test_${BUILD_NUMBER} || true
+            docker ps -q --filter "publish=3001" | xargs -r docker rm -f
             docker run -d --name test_${BUILD_NUMBER} -p 3001:3000 ${IMAGE_NAME}:${IMAGE_TAG}
             sleep 5
             curl -f http://localhost:3001/health
