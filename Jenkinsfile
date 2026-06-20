@@ -1,11 +1,6 @@
 pipeline {
     agent any
 
-    environment {
-        IMAGE_NAME = 'simple-node-app'
-        IMAGE_TAG  = "${BUILD_NUMBER}"
-    }
-
     stages {
         stage('Checkout') {
             steps {
@@ -13,35 +8,36 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Build') {
             steps {
-                sh 'docker build -t ${IMAGE_NAME}:${IMAGE_TAG} -t ${IMAGE_NAME}:latest .'
+                echo 'Building the full stack...'
+                sh 'docker compose build'
             }
         }
 
-stage('Verify Image') {
-    steps {
-        sh '''
-            docker ps -q --filter "publish=3001" | xargs -r docker rm -f
-            docker run -d --name test_${BUILD_NUMBER} -p 3001:3000 ${IMAGE_NAME}:${IMAGE_TAG}
-            sleep 5
-            docker exec test_${BUILD_NUMBER} wget -qO- http://localhost:3000/health
-            docker rm -f test_${BUILD_NUMBER}
-        '''
-    }
-}
+        stage('Deploy') {
+            steps {
+                echo 'Deploying app + database...'
+                sh 'docker compose down || true'
+                sh 'docker compose up -d'
+            }
+        }
+
+        stage('Verify') {
+            steps {
+                echo 'Checking the app is alive...'
+                sh 'sleep 10'
+                sh 'docker compose exec -T app wget -qO- http://localhost:3000/health'
+            }
+        }
     }
 
     post {
-        always {
-            echo 'Pipeline finished. Cleaning up dangling resources.'
-            sh 'docker image prune -f'
-        }
         success {
-            echo "Build #${BUILD_NUMBER} succeeded!"
+            echo 'Full stack deployed successfully!'
         }
         failure {
-            echo 'Build failed. Check the stage logs above.'
+            echo 'Deployment failed. Check logs above.'
         }
     }
 }

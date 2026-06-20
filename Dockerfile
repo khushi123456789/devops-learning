@@ -10,8 +10,10 @@ RUN npm ci --omit=dev
 
 # Copy application source
 COPY . .
+# Create the data directory and give the node user ownership
+RUN mkdir -p /app/data && chown -R node:node /app/data
 
-# Run as the built-in non-root user for security
+# Now switch to the non-root user
 USER node
 
 # The app listens on 3000 (override with the PORT env var)
